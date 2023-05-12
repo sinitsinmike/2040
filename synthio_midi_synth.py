@@ -1,6 +1,7 @@
 # synthio_midi_synth.py - pretty usable MIDI-controlled synth using synthio in CircuitPython
 # 11 May 2023 - @todbot / Tod Kurt
 # Uses cheapie PCM5102 DAC on QTPY RP2040
+# Video demo: https://www.youtube.com/watch?v=N-PbbWWDE6k
 # Features:
 # - midi velocity controls attack rate (gentle press = slow, hard press = fast)
 # - notes have small random detune on all oscillators to reduce phase stacking
@@ -37,7 +38,7 @@ wave_noise = np.array([random.randint(-VOLUME, VOLUME) for i in range(SAMPLE_SIZ
 wave_sin_dirty = np.array( wave_sin + (wave_noise/4), dtype=np.int16)
 waveforms = (wave_saw, wave_squ, wave_sin, wave_sin_dirty, wave_noise)
 
-synth = synthio.Synthesizer(sample_rate=SAMPLE_RATE)  # note no envelope or waveform, we do that in Note now!
+synth = synthio.Synthesizer(sample_rate=SAMPLE_RATE)  # note: no envelope or waveform, we do that in Note now!
 audio = audiobusio.I2SOut(bit_clock=bck_pin, word_select=lck_pin, data=dat_pin)
 mixer = audiomixer.Mixer(voice_count=1, sample_rate=SAMPLE_RATE, channel_count=1,
                          bits_per_sample=16, samples_signed=True, buffer_size=2048 ) # buffer_size=4096 )
