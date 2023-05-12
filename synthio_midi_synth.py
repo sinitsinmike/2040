@@ -1,13 +1,13 @@
 # synthio_midi_synth.py - pretty usable MIDI-controlled synth using synthio in CircuitPython
 # 11 May 2023 - @todbot / Tod Kurt
 # Uses cheapie PCM5102 DAC on QTPY RP2040
-# Features:	
+# Features:
 # - midi velocity controls attack rate (gentle press = slow, hard press = fast)
 # - notes have small random detune on all oscillators to reduce phase stacking
 # - adjustable number of detuned oscillators per note 1-5 (midi controller 83)
-# - five selectable waveforms: saw, squ, sin, noisy sin, noise (midi controller 82)	
-# - vibrato depth on mod wheel (midi controller 1)	
-# 
+# - five selectable waveforms: saw, squ, sin, noisy sin, noise (midi controller 82)
+# - vibrato depth on mod wheel (midi controller 1)
+#
 import time,random
 import board, analogio
 import audiobusio, audiomixer
@@ -41,7 +41,7 @@ synth = synthio.Synthesizer(sample_rate=SAMPLE_RATE)  # note no envelope or wave
 audio = audiobusio.I2SOut(bit_clock=bck_pin, word_select=lck_pin, data=dat_pin)
 mixer = audiomixer.Mixer(voice_count=1, sample_rate=SAMPLE_RATE, channel_count=1,
                          bits_per_sample=16, samples_signed=True, buffer_size=2048 ) # buffer_size=4096 )
-audio.play(mixer)  # attach mixer to DAC
+audio.play(mixer)           # attach mixer to DAC
 mixer.voice[0].play(synth)  # start synth engine playing
 
 wave_i = 0  # which waveform to play
@@ -50,6 +50,7 @@ max_oscs = 5
 osc_detune = 0.01 # how much detune (fatness)
 
 notes_pressed = {}  # which notes are currently being pressed, and their note objects (so we can unpress them)
+mod_val = 0  # ranges 0-1
 
 def note_on(notenum, vel):
     at_time = max(0, 2 * (127-(vel*1.2)) / 127) # velocity controls attack time
@@ -63,7 +64,8 @@ def note_on(notenum, vel):
         fr = f * (1 + (osc_detune*i) + (random.random()/1000) )
         print("fr:",fr)
         notes.append( synthio.Note( frequency=fr, envelope=amp_env, waveform=waveform,
-                                    vibrato_depth=0.0, vibrato_rate=3 ) )
+                                    bend_mode=synthio.BendMode.VIBRATO,
+                                    bend_depth = 0.5 * mod_val, bend_rate = 20 * mod_val ) )
     notes_pressed[notenum] = notes
     synth.press(notes)
 
@@ -91,13 +93,15 @@ while True:
     elif isinstance(msg,ControlChange):
         print("controlChange", msg.control, "=", msg.value)
         if msg.control == 1: # mod wheel
+            mod_val = msg.value / 127
             for notes in notes_pressed.values():
-                for n in notes:
-                    #n.vibrato_rate = 20 * (msg.value/127)  # this perhaps does not work?
-                    n.vibrato_depth = (msg.value/127)
+                for n in notes:  # adjust vibrato depth & rate for all notes
+                    n.bend_depth = 0.5 * mod_val
+                    n.bend_rate = 20 * mod_val
         elif msg.control == 82:  # leftmost slider on minilab3
             num_oscs = int( 1 + (msg.value/127) * max_oscs )
             print("num_oscs:",num_oscs)
         elif msg.control == 83:  # leftmost+1 slider on minilab3
             wave_i = int( (msg.value/127) * (len(waveforms)-1) )
             print("wave_i:",wave_i)
+
