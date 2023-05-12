@@ -1,11 +1,6 @@
-# synthio_midi_synth.py -- pretty usable MIDI-controlled synth using synthio
+# synthio_midi_synth.py
 # 11 May 2023 - @todbot / Tod Kurt
 # Uses cheapie PCM5102 DAC on QTPY RP2040
-# Features:
-# - adjustable number of oscillators per note 1-5 (midi controller 83)
-# - three selectable waveforms: saw, squ, sin (midi controller 82)
-# - vibrato depth on mod wheel (midi controller 1)
-# 
 import time,random
 import board, analogio
 import audiobusio, audiomixer
@@ -31,7 +26,9 @@ VOLUME = 12000       # 16384 is max volume I think
 wave_saw = np.linspace(VOLUME, -VOLUME, num=SAMPLE_SIZE, dtype=np.int16)
 wave_squ = np.concatenate((np.ones(SAMPLE_SIZE//2, dtype=np.int16)*VOLUME,np.ones(SAMPLE_SIZE//2, dtype=np.int16)*-VOLUME))
 wave_sin = np.array(np.sin(np.linspace(0, 4*np.pi, SAMPLE_SIZE, endpoint=False)) * VOLUME, dtype=np.int16)
-waveforms = (wave_saw, wave_squ, wave_sin)
+wave_noise = np.array([random.randint(-VOLUME, VOLUME) for i in range(SAMPLE_SIZE)], dtype=np.int16)
+wave_sin_dirty = np.array( wave_sin + (wave_noise/4), dtype=np.int16)
+waveforms = (wave_saw, wave_squ, wave_sin, wave_sin_dirty, wave_noise)
 
 synth = synthio.Synthesizer(sample_rate=SAMPLE_RATE)  # note no envelope or waveform, we do that in Note now!
 audio = audiobusio.I2SOut(bit_clock=bck_pin, word_select=lck_pin, data=dat_pin)
@@ -48,7 +45,8 @@ osc_detune = 0.01 # how much detune (fatness)
 notes_pressed = {}  # which notes are currently being pressed, and their note objects (so we can unpress them)
 
 def note_on(notenum, vel):
-    amp_env = synthio.Envelope(attack_time=0.1, decay_time=0.05, release_time=0.8,
+    at_time = max(0, 2 * (127-(vel*1.2)) / 127) # velocity controls attack time
+    amp_env = synthio.Envelope(attack_time=at_time, decay_time=0.05, release_time=0.8,
                                attack_level=1, sustain_level=0.8)
     waveform = waveforms[wave_i]
     notes = []
@@ -96,4 +94,3 @@ while True:
         elif msg.control == 83:  # leftmost+1 slider on minilab3
             wave_i = int( (msg.value/127) * (len(waveforms)-1) )
             print("wave_i:",wave_i)
-
