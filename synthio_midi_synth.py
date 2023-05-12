@@ -2,8 +2,10 @@
 # 11 May 2023 - @todbot / Tod Kurt
 # Uses cheapie PCM5102 DAC on QTPY RP2040
 # Features:	
-# - adjustable number of oscillators per note 1-5 (midi controller 83)	
-# - three selectable waveforms: saw, squ, sin (midi controller 82)	
+# - midi velocity controls attack rate (gentle press = slow, hard press = fast)
+# - notes have small random detune on all oscillators to reduce phase stacking
+# - adjustable number of detuned oscillators per note 1-5 (midi controller 83)
+# - five selectable waveforms: saw, squ, sin, noisy sin, noise (midi controller 82)	
 # - vibrato depth on mod wheel (midi controller 1)	
 # 
 import time,random
