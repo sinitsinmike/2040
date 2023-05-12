@@ -1,6 +1,11 @@
-# synthio_midi_synth.py
+# synthio_midi_synth.py - pretty usable MIDI-controlled synth using synthio in CircuitPython
 # 11 May 2023 - @todbot / Tod Kurt
 # Uses cheapie PCM5102 DAC on QTPY RP2040
+# Features:	
+# - adjustable number of oscillators per note 1-5 (midi controller 83)	
+# - three selectable waveforms: saw, squ, sin (midi controller 82)	
+# - vibrato depth on mod wheel (midi controller 1)	
+# 
 import time,random
 import board, analogio
 import audiobusio, audiomixer
