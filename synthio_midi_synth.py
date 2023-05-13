@@ -9,8 +9,8 @@
 # - five selectable waveforms: saw, squ, sin, noisy sin, noise (midi controller 82)
 # - vibrato depth on mod wheel (midi controller 1)
 #
-import time,random
-import board, analogio
+import time, random
+import board
 import audiobusio, audiomixer
 import synthio
 import ulab.numpy as np
